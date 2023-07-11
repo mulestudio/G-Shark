@@ -607,7 +607,7 @@ namespace GShark.Geometry
             return point.CloudClosestPoint(edgesClosestPoints);
         }
 
-        public Point3 ClosestPoint(Point3 point)
+        public List<Point3> ClosestPoint(Point3 point)
         {
             // Gets vertices and converts them from type "MeshVertex" to "Point3"
             List<MeshVertex> meshVertices = Vertices;
@@ -622,26 +622,26 @@ namespace GShark.Geometry
             System.Collections.Generic.IEnumerable<MeshFace> AdjacentFaces = CloserVertex.AdjacentFaces();
 
             var CloserPointToFace_List = new List<Point3>();
-
+            var pointsForLines = new List<Point3>();
             foreach (MeshFace face in AdjacentFaces)
             {
                 // Retrives the Vertices associated with each face
                 List<MeshVertex> GSVertices = face.AdjacentVertices();
                 // Converts from MeshVertex to Point3
-                List<Point3> FacePoints = GSVertices.ConvertAll(v => (Point3)v);
-
+                //List<Point3> GSVertices = GSVertices.ConvertAll(v => (Point3)v);
+                
                 if (GSVertices.Count == 3)
                 {
-                    var trianglePoints = new Point3[] { FacePoints[0], FacePoints[1], FacePoints[2] };
+                    var trianglePoints = new Point3[] { GSVertices[0], GSVertices[1], GSVertices[2] };
                     Point3 ClosestPoint0 = ClosestPointToTriangle(trianglePoints, point);
                     CloserPointToFace_List.Add(ClosestPoint0);
                 }
-                if (GSVertices.Count == 4)
+                else if (GSVertices.Count == 4)
                 {
-                    var trianglePoints1 = new Point3[] { FacePoints[0], FacePoints[1], FacePoints[2] };
-                    var trianglePoints2 = new Point3[] { FacePoints[1], FacePoints[2], FacePoints[3] };
-                    var trianglePoints3 = new Point3[] { FacePoints[0], FacePoints[1], FacePoints[3] };
-                    var trianglePoints4 = new Point3[] { FacePoints[0], FacePoints[2], FacePoints[3] };
+                    var trianglePoints1 = new Point3[] { GSVertices[0], GSVertices[1], GSVertices[2] };
+                    var trianglePoints2 = new Point3[] { GSVertices[1], GSVertices[2], GSVertices[3] };
+                    var trianglePoints3 = new Point3[] { GSVertices[0], GSVertices[1], GSVertices[3] };
+                    var trianglePoints4 = new Point3[] { GSVertices[0], GSVertices[2], GSVertices[3] };
 
                     var ClosestPoint1 = ClosestPointToTriangle(trianglePoints1, point);
                     var ClosestPoint2 = ClosestPointToTriangle(trianglePoints2, point);
@@ -653,22 +653,29 @@ namespace GShark.Geometry
 
                     CloserPointToFace_List.Add(ClosestPoint);
                 }
-                else 
+                else if (GSVertices.Count > 4)
                 {
-                    List<Point3> TrianglesCP = new List<Point3>();
-                    //Point3 ClosestPoint = point.CloudClosestPoint(FacePoints);
-                    for (int i = 0; i < (GSVertices.Count-2); i++)
+                    var TrianglesCP = new List<Point3>();
+                    
+                    //Point3 ClosestPoint = point.CloudClosestPoint(GSVertices);
+                    for (int i = 0; i < (GSVertices.Count - 2); i++)
                     {
-                        var trianglePoints = new Point3[] { FacePoints[0], FacePoints[i + 1], FacePoints[i + 2] };
+                        var trianglePoints = new Point3[] { GSVertices[0], GSVertices[i + 1], GSVertices[i + 2] };
                         Point3 ClosestPointToNgon = ClosestPointToTriangle(trianglePoints, point);
                         TrianglesCP.Add(ClosestPointToNgon);
+                        //var lineEndPoints = new List<Point3>() {GSVertices[0]; GSVertices[i + 1]};
+                        pointsForLines.Add(GSVertices[0]);
+                        pointsForLines.Add(GSVertices[i+1]);
+                        pointsForLines.Add(GSVertices[0]);
+                        pointsForLines.Add(GSVertices[i+2]);
                     }
                     Point3 ClosestPoint = point.CloudClosestPoint(TrianglesCP);
                     CloserPointToFace_List.Add(ClosestPoint);
                 }
             }
             Point3 MeshClosestPoint = point.CloudClosestPoint(CloserPointToFace_List);
-            return MeshClosestPoint;
+            pointsForLines.Add(MeshClosestPoint);
+            return pointsForLines;
         }
 
         /// <summary>
